@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>질문게시판</title>
+<meta name="theme-color" content="#4B6142">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="질문게시판">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+    --paper:#FAF7EF; --paper-2:#F1EBDA; --ink:#2A2723; --ink-soft:#7A7266; --line:#DED2B4;
+    --cta:#4B6142; --cta-ink:#F7F4E7; --teacher:#B8791A; --teacher-bg:#FBEFD6; --danger:#A6402C;
+    --sub-kor:#B5533C; --sub-math:#3B5C82; --sub-eng:#5F7A38; --sub-soc:#8B5E83; --sub-sci:#2C7A66; --sub-etc:#84795F;
+    --radius:4px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#1B1815; --paper-2:#252019; --ink:#EDE6D6; --ink-soft:#A79C88; --line:#3D3629;
+      --cta:#7FA070; --cta-ink:#16210F; --teacher:#E0A94A; --teacher-bg:#332714; --danger:#E08066;
+      --sub-kor:#D9836A; --sub-math:#7FA6D6; --sub-eng:#9FBB6C; --sub-soc:#C79BC0; --sub-sci:#63B8A0; --sub-etc:#B0A48A;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#1B1815; --paper-2:#252019; --ink:#EDE6D6; --ink-soft:#A79C88; --line:#3D3629;
+    --cta:#7FA070; --cta-ink:#16210F; --teacher:#E0A94A; --teacher-bg:#332714; --danger:#E08066;
+    --sub-kor:#D9836A; --sub-math:#7FA6D6; --sub-eng:#9FBB6C; --sub-soc:#C79BC0; --sub-sci:#63B8A0; --sub-etc:#B0A48A;
+  }
+  html{scroll-padding-top:env(safe-area-inset-top,0px); height:100%;}
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100%; background:var(--paper); color:var(--ink);
+    font-family:'Noto Sans KR', system-ui, -apple-system, sans-serif; -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.serif{ font-family:'Noto Serif KR', 'Noto Sans KR', serif; }
+  .top-bar{
+    position:sticky; top:0; z-index:5;
+    padding:calc(18px + env(safe-area-inset-top,0px)) 18px 10px;
+    background:var(--paper); border-bottom:1px solid var(--line);
+  }
+  .top-bar h1{ margin:0; font-size:1.35rem; font-weight:700; letter-spacing:-.01em; }
+  .top-bar p{ margin:4px 0 0; font-size:.82rem; color:var(--ink-soft); }
+  .status-banner{
+    display:none; margin:10px 18px 0; padding:10px 12px; font-size:.82rem;
+    background:var(--paper-2); border:1px solid var(--line); border-radius:var(--radius); color:var(--ink-soft);
+  }
+  .status-banner.show{ display:block; }
+  .tabs{ display:flex; gap:8px; overflow-x:auto; padding:12px 18px 4px; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+  .tabs::-webkit-scrollbar{ display:none; }
+  .tab-chip{
+    flex:0 0 auto; padding:6px 14px; border-radius:999px; border:1px solid var(--line);
+    background:transparent; color:var(--ink-soft); font-size:.85rem; font-weight:500;
+    cursor:pointer; white-space:nowrap; font-family:inherit;
+  }
+  .tab-chip.active{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+  main{ padding:6px 18px 100px; max-width:640px; margin:0 auto; }
+  .empty{ text-align:center; padding:60px 20px; color:var(--ink-soft); }
+  .empty .big{ font-size:2rem; display:block; margin-bottom:10px; }
+  .empty p{ font-size:.9rem; line-height:1.6; margin:0; }
+  .qcard{ border-bottom:1px dashed var(--line); padding:16px 2px; cursor:pointer; }
+  .qcard:last-child{ border-bottom:none; }
+  .qrow{ display:flex; align-items:flex-start; gap:10px; }
+  .sub-chip{ flex:0 0 auto; font-size:.72rem; font-weight:700; padding:3px 8px; border-radius:3px; color:#fff; line-height:1.3; margin-top:2px; }
+  .qcontent{ flex:1; min-width:0; }
+  .qtitle{ font-size:1rem; font-weight:700; margin:0 0 4px; line-height:1.4; word-break:break-word; }
+  .qmeta{ font-size:.78rem; color:var(--ink-soft); display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .qmeta .dot{ opacity:.5; }
+  .qbody{ margin-top:12px; padding:12px 14px; background:var(--paper-2); border-radius:var(--radius); font-size:.9rem; line-height:1.65; white-space:pre-wrap; word-break:break-word; }
+  .answers{ margin-top:12px; }
+  .answers-head{ font-size:.78rem; color:var(--ink-soft); font-weight:700; margin-bottom:8px; }
+  .answer-item{ display:flex; gap:8px; padding:10px 12px; border-left:3px solid var(--line); margin-bottom:8px; font-size:.88rem; line-height:1.55; border-radius:0 var(--radius) var(--radius) 0; }
+  .answer-item.teacher{ border-left-color:var(--teacher); background:var(--teacher-bg); }
+  .answer-meta{ font-size:.76rem; color:var(--ink-soft); display:flex; gap:6px; align-items:center; margin-bottom:3px; }
+  .teacher-tag{ font-size:.7rem; font-weight:700; color:var(--teacher); border:1px solid var(--teacher); padding:1px 6px; border-radius:999px; }
+  .answer-body{ white-space:pre-wrap; word-break:break-word; }
+  .answer-form{ display:flex; flex-direction:column; gap:8px; margin-top:6px; }
+  .answer-form textarea{ min-height:56px; }
+  .row-fields{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .row-fields label.checkline{ display:flex; align-items:center; gap:5px; font-size:.8rem; color:var(--ink-soft); }
+  input, textarea, select{
+    font-family:inherit; font-size:.9rem; padding:9px 10px; border:1px solid var(--line);
+    border-radius:var(--radius); background:var(--paper); color:var(--ink); width:100%;
+  }
+  input[type="checkbox"]{ width:auto; }
+  input:disabled{ opacity:.5; }
+  textarea{ resize:vertical; font-family:inherit; }
+  button{ font-family:inherit; cursor:pointer; border:none; }
+  .btn{ padding:9px 16px; border-radius:var(--radius); font-size:.86rem; font-weight:700; }
+  .btn-primary{ background:var(--cta); color:var(--cta-ink); }
+  .btn-primary:disabled{ opacity:.6; }
+  .btn-ghost{ background:transparent; color:var(--ink-soft); border:1px solid var(--line); }
+  .btn-small{ padding:7px 12px; font-size:.8rem; }
+  .fab{
+    position:fixed; right:18px; bottom:calc(20px + env(safe-area-inset-bottom,0px));
+    width:56px; height:56px; border-radius:50%; background:var(--cta); color:var(--cta-ink);
+    font-size:1.6rem; box-shadow:0 4px 14px rgba(0,0,0,.25); display:flex; align-items:center; justify-content:center; z-index:6;
+  }
+  .overlay{ position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:flex-end; justify-content:center; z-index:20; }
+  .overlay.show{ display:flex; }
+  .modal{ background:var(--paper); width:100%; max-width:640px; border-radius:16px 16px 0 0; padding:20px 20px calc(20px + env(safe-area-inset-bottom,0px)); max-height:88vh; overflow-y:auto; }
+  .modal h2{ margin:0 0 14px; font-size:1.1rem; }
+  .field{ margin-bottom:12px; }
+  .field label{ display:block; font-size:.78rem; color:var(--ink-soft); margin-bottom:5px; font-weight:500; }
+  .modal-actions{ display:flex; gap:8px; margin-top:16px; }
+  .modal-actions .btn{ flex:1; }
+  .toast{
+    position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%) translateY(12px);
+    background:var(--ink); color:var(--paper); padding:10px 16px; border-radius:999px; font-size:.82rem;
+    opacity:0; transition:opacity .2s, transform .2s; z-index:30; pointer-events:none; max-width:86%; text-align:center;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <h1 class="serif">질문게시판</h1>
+    <p>모르는 문제, 온라인으로도 물어보고 답을 나눠요</p>
+  </div>
+  <div class="status-banner" id="statusBanner"></div>
+
+  <nav class="tabs" id="tabs"></nav>
+  <main id="list"></main>
+
+  <button class="fab" id="fabBtn" aria-label="질문하기">＋</button>
+
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <h2 class="serif">질문 올리기</h2>
+      <form id="questionForm">
+        <div class="field"><label>과목</label><select id="qSubject"></select></div>
+        <div class="field"><label>제목</label><input id="qTitle" type="text" maxlength="80" placeholder="무엇이 궁금한가요?" required></div>
+        <div class="field"><label>내용</label><textarea id="qContent" rows="4" maxlength="1000" placeholder="어느 부분이 이해가 안 되는지 자세히 적어주세요" required></textarea></div>
+        <div class="field"><label>이름</label><input id="qAuthor" type="text" maxlength="20" placeholder="이름 또는 닉네임"></div>
+        <label class="checkline"><input type="checkbox" id="qAnon"> 익명으로 올리기</label>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="qCancel">취소</button>
+          <button type="submit" class="btn btn-primary" id="qSubmitBtn">올리기</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+    import {
+      getFirestore, collection, addDoc, doc, updateDoc, onSnapshot,
+      query, orderBy, serverTimestamp, arrayUnion
+    } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+    // ---- Firebase 연결 ----
+    const firebaseConfig = {
+      apiKey: "AIzaSyC33JEk-2q7fR74EW3VwDuuksSfJgDpBSQ",
+      authDomain: "cb-academunity.firebaseapp.com",
+      projectId: "cb-academunity",
+      storageBucket: "cb-academunity.firebasestorage.app",
+      messagingSenderId: "74908852284",
+      appId: "1:74908852284:web:a145c95d80eaecf732a339"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // 우리 반만 아는 값으로 바꿔두세요. 완전한 보안은 아니지만 무작위 도배는 막아줘요.
+    const CLASS_CODE = "CBHS2026";
+
+    // ---- 상태 ----
+    const DEFAULT_SUBJECTS = ["국어","수학","영어","사회","과학","기타"];
+    const SUBJECT_COLORS = {"국어":"var(--sub-kor)","수학":"var(--sub-math)","영어":"var(--sub-eng)","사회":"var(--sub-soc)","과학":"var(--sub-sci)","기타":"var(--sub-etc)"};
+
+    let questions = [];
+    const ui = { filter: '전체', expandedId: null };
+
+    function esc(s){
+      return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    function relTime(ts){
+      if(!ts) return '방금';
+      const t = ts.toMillis ? ts.toMillis() : ts;
+      const diff = Math.floor((Date.now() - t)/1000);
+      if(diff < 60) return '방금';
+      if(diff < 3600) return Math.floor(diff/60) + '분 전';
+      if(diff < 86400) return Math.floor(diff/3600) + '시간 전';
+      if(diff < 86400*7) return Math.floor(diff/86400) + '일 전';
+      const d = new Date(t);
+      return (d.getMonth()+1) + '.' + d.getDate();
+    }
+    function showToast(msg){
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('show');
+      setTimeout(()=>t.classList.remove('show'), 2600);
+    }
+    function showStatus(msg){
+      const b = document.getElementById('statusBanner');
+      if(!msg){ b.classList.remove('show'); return; }
+      b.textContent = msg; b.classList.add('show');
+    }
+
+    function renderTabs(){
+      const wrap = document.getElementById('tabs');
+      const subs = ['전체', ...DEFAULT_SUBJECTS];
+      wrap.innerHTML = subs.map(s =>
+        `<button class="tab-chip${ui.filter===s?' active':''}" data-filter="${esc(s)}">${esc(s)}</button>`
+      ).join('');
+    }
+
+    function renderList(){
+      const el = document.getElementById('list');
+      const qs = questions.filter(q => ui.filter==='전체' || q.subject===ui.filter);
+      if(qs.length===0){
+        el.innerHTML = `<div class="empty"><span class="big">✏️</span><p>아직 질문이 없어요.<br>궁금한 걸 첫 질문으로 남겨보세요.</p></div>`;
+        return;
+      }
+      el.innerHTML = qs.map(q => {
+        const color = SUBJECT_COLORS[q.subject] || 'var(--sub-etc)';
+        const isOpen = ui.expandedId===q.id;
+        const authorLabel = q.anonymous ? '익명' : (q.author || '이름없음');
+        const answers = (q.answers||[]).slice().sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+        const answersHtml = answers.map(a => {
+          const aLabel = a.anonymous ? '익명' : (a.author || '이름없음');
+          return `<div class="answer-item${a.isTeacher?' teacher':''}">
+            <div style="flex:1">
+              <div class="answer-meta">${a.isTeacher?'<span class="teacher-tag">선생님</span>':''}<span>${esc(aLabel)}</span><span class="dot">·</span><span>${relTime(a.createdAt)}</span></div>
+              <div class="answer-body">${esc(a.content)}</div>
+            </div></div>`;
+        }).join('');
+        const bodyBlock = isOpen ? `
+          <div class="qbody">${esc(q.content)}</div>
+          <div class="answers">
+            <div class="answers-head">답변 ${answers.length}개</div>
+            ${answersHtml}
+            <form class="answer-form" data-answer-for="${q.id}">
+              <textarea placeholder="답변을 남겨주세요" required maxlength="800"></textarea>
+              <div class="row-fields">
+                <input type="text" placeholder="이름" maxlength="20" style="flex:1" class="a-author">
+                <label class="checkline"><input type="checkbox" class="a-anon"> 익명</label>
+                <label class="checkline"><input type="checkbox" class="a-teacher"> 선생님 답변</label>
+              </div>
+              <button type="submit" class="btn btn-primary btn-small" style="align-self:flex-end">답변 남기기</button>
+            </form>
+          </div>` : '';
+        return `<article class="qcard" data-qid="${q.id}">
+          <div class="qrow">
+            <span class="sub-chip" style="background:${color}">${esc(q.subject)}</span>
+            <div class="qcontent">
+              <p class="qtitle serif">${esc(q.title)}</p>
+              <div class="qmeta"><span>${esc(authorLabel)}</span><span class="dot">·</span><span>${relTime(q.createdAt)}</span><span class="dot">·</span><span>답변 ${answers.length}</span></div>
+            </div>
+          </div>
+          ${bodyBlock}
+        </article>`;
+      }).join('');
+    }
+
+    function render(){ renderTabs(); renderList(); }
+
+    function genId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+    // ---- Firestore 실시간 구독 ----
+    const qRef = query(collection(db, 'questions'), orderBy('createdAt', 'desc'));
+    let firstLoad = true;
+    onSnapshot(qRef, (snap) => {
+      questions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      showStatus('');
+      render();
+      firstLoad = false;
+    }, (err) => {
+      console.error(err);
+      showStatus(firstLoad
+        ? '게시판을 불러오지 못했어요. 네트워크를 확인하거나 새로고침 해보세요.'
+        : '연결이 끊겼어요. 방금 쓴 내용이 저장되지 않았을 수 있어요.');
+    });
+
+    async function submitQuestion(subject, title, content, author, anonymous){
+      await addDoc(collection(db, 'questions'), {
+        subject, title, content,
+        author: anonymous ? null : (author || null),
+        anonymous, answers: [],
+        createdAt: serverTimestamp(),
+        classCode: CLASS_CODE
+      });
+    }
+
+    async function submitAnswer(qid, content, author, anonymous, isTeacher){
+      await updateDoc(doc(db, 'questions', qid), {
+        answers: arrayUnion({
+          id: genId(), content,
+          author: anonymous ? null : (author || null),
+          anonymous, isTeacher, createdAt: Date.now()
+        })
+      });
+    }
+
+    // ---- 이벤트 ----
+    function init(){
+      const sel = document.getElementById('qSubject');
+      sel.innerHTML = DEFAULT_SUBJECTS.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+
+      render();
+
+      document.getElementById('tabs').addEventListener('click', (e) => {
+        const btn = e.target.closest('.tab-chip');
+        if(!btn) return;
+        ui.filter = btn.getAttribute('data-filter');
+        render();
+      });
+
+      document.getElementById('list').addEventListener('click', (e) => {
+        if(e.target.closest('form') || e.target.closest('button') || e.target.closest('input') || e.target.closest('textarea') || e.target.closest('label')) return;
+        const card = e.target.closest('.qcard');
+        if(!card) return;
+        const id = card.getAttribute('data-qid');
+        ui.expandedId = (ui.expandedId===id) ? null : id;
+        render();
+      });
+
+      document.getElementById('list').addEventListener('submit', async (e) => {
+        const form = e.target.closest('.answer-form');
+        if(!form) return;
+        e.preventDefault();
+        const qid = form.getAttribute('data-answer-for');
+        const content = form.querySelector('textarea').value.trim();
+        if(!content) return;
+        const anon = form.querySelector('.a-anon').checked;
+        const author = form.querySelector('.a-author').value.trim();
+        const isTeacher = form.querySelector('.a-teacher').checked;
+        const btn = form.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        try{
+          await submitAnswer(qid, content, author, anon, isTeacher);
+        }catch(err){
+          console.error(err);
+          showToast('답변 등록에 실패했어요. 다시 시도해주세요.');
+        }
+        btn.disabled = false;
+      });
+
+      document.getElementById('fabBtn').addEventListener('click', () => {
+        document.getElementById('overlay').classList.add('show');
+      });
+      document.getElementById('qCancel').addEventListener('click', () => {
+        document.getElementById('overlay').classList.remove('show');
+      });
+      document.getElementById('overlay').addEventListener('click', (e) => {
+        if(e.target.id==='overlay') e.target.classList.remove('show');
+      });
+      document.getElementById('qAnon').addEventListener('change', function(){
+        document.getElementById('qAuthor').disabled = this.checked;
+      });
+
+      document.getElementById('questionForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const subject = document.getElementById('qSubject').value;
+        const title = document.getElementById('qTitle').value.trim();
+        const content = document.getElementById('qContent').value.trim();
+        const anon = document.getElementById('qAnon').checked;
+        const author = document.getElementById('qAuthor').value.trim();
+        if(!title || !content) return;
+        const btn = document.getElementById('qSubmitBtn');
+        btn.disabled = true;
+        try{
+          await submitQuestion(subject, title, content, author, anon);
+          e.target.reset();
+          document.getElementById('qAuthor').disabled = false;
+          document.getElementById('overlay').classList.remove('show');
+          ui.filter = '전체';
+        }catch(err){
+          console.error(err);
+          showToast('등록에 실패했어요. 다시 시도해주세요.');
+        }
+        btn.disabled = false;
+      });
+    }
+
+    if(document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</body>
+</html>
